@@ -72,17 +72,18 @@ class condition extends \core_availability\condition {
      */
     public function is_available($not, \core_availability\info $info, $grabthelot, $userid) {
         $course = $info->get_course();
-        return $this->is_available_for_all($not, $course);
+        return $this->is_available_for_all($not, $course, $userid);
     }
 
     /**
      * Checks the target is globally available
      * @param bool $not
      * @param object $cousre The course object
+     * @param int $userid
      * @return boolean
      */
-    public function is_available_for_all($not = false, $course = null) {
-        $referencedate = $this->get_reference_date($course);
+    public function is_available_for_all($not = false, $course = null, $userid = null) {
+        $referencedate = $this->get_reference_date($course, $userid);
 
         // Check condition.
         $now = self::get_time();
@@ -98,13 +99,17 @@ class condition extends \core_availability\condition {
     /**
      * Get the reference date to calculate shift from
      * @param object $cousre The course object
+     * @param int $userid
      * @return integer date
      */
-    protected function get_reference_date($course = null) {
+    protected function get_reference_date($course = null, $userid = null) {
         global $COURSE, $USER, $DB;
 
         if (!$course) {
             $course = $COURSE;
+        }
+        if (!$userid) {
+            $userid = $USER->id;
         }
 
         $config = get_config('availability_days');
@@ -130,7 +135,7 @@ class condition extends \core_availability\condition {
                 GROUP BY
                     ue.userid
             ';
-            if ($lowest = $DB->get_record_sql($sql, array($course->id, $USER->id))) {
+            if ($lowest = $DB->get_record_sql($sql, array($course->id, $userid))) {
                 $referencedate = $lowest->minenroltime;
             } else {
                 // This should not happen but some role assigned users NON enrolled might fall into that case.
